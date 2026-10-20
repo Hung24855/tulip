@@ -1,0 +1,7 @@
+# Temporary / scratch files
+*.png
+*.log
+*.tmp
+check_*.js
+find_*.js
+extract_*.js
