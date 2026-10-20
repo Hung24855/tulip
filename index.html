@@ -3204,14 +3204,16 @@
       padding: 0 6px !important;
     }
 
-    /* Từng đoạn thư hiển thị dần */
+    /* Từng đoạn thư hiển thị dần với hiệu ứng đánh chữ */
     .letter-paragraph {
       margin: 0 0 14px 0 !important;
       opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform: translateY(6px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      display: none;
     }
     .letter-paragraph.typed {
+      display: block !important;
       opacity: 1 !important;
       transform: translateY(0) !important;
     }
@@ -3222,10 +3224,12 @@
       padding-top: 8px !important;
       text-align: right !important;
       opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.75s ease, transform 0.75s ease;
+      transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      display: none;
     }
     .letter-modal__signature-area.typed {
+      display: block !important;
       opacity: 1 !important;
       transform: translateY(0) !important;
     }
@@ -3244,6 +3248,24 @@
       margin-top: 4px !important;
     }
 
+    /* Con trỏ nhấp nháy phong cách máy đánh chữ / ngòi bút lãng mạn */
+    .letter-cursor {
+      display: inline-block;
+      width: 2.5px;
+      height: 1.15em;
+      background-color: currentColor;
+      margin-left: 3px;
+      vertical-align: -0.15em;
+      border-radius: 1px;
+      box-shadow: 0 0 6px rgba(244, 114, 182, 0.7);
+      animation: letterCursorBlink 0.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes letterCursorBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
     .letter-skip-hint {
       text-align: center;
       font-family: 'Dancing Script', cursive;
@@ -3252,6 +3274,7 @@
       margin-top: 12px;
       user-select: none;
       cursor: pointer;
+      transition: opacity 0.4s ease;
     }
 
     /* Chế độ chụp ảnh nhanh demo-instant */
@@ -3271,6 +3294,8 @@
       opacity: 1 !important;
       transform: none !important;
       transition: none !important;
+      display: block !important;
+      visibility: visible !important;
     }
     body.demo-instant .letter {
       opacity: 1 !important;
@@ -4157,55 +4182,240 @@
       fingerprintBtn.addEventListener('click', triggerUnlock);
     }
 
-    // Tương tác mở thư nghệ thuật với Animation
+    // Tương tác mở thư nghệ thuật với Animation & Hiệu ứng đánh chữ (Typewriter Effect)
     const letterModal = document.getElementById('letterModal');
     const letterClose = document.getElementById('letterClose');
     const modalBackdrop = document.getElementById('modalBackdrop');
     const letterBoxWrap = document.getElementById('letterBoxWrap');
+    const letterBox = document.querySelector('.letter-modal__box');
+    const letterSkipHint = document.querySelector('.letter-skip-hint');
+
+    const titleEl = document.getElementById('letterTitle');
+    const p1 = document.getElementById('lp1');
+    const p2 = document.getElementById('lp2');
+    const p3 = document.getElementById('lp3');
+    const p4 = document.getElementById('lp4');
+    const p5 = document.getElementById('lp5');
+    const sigArea = document.getElementById('lpSig');
+    const sigEl = document.querySelector('.letter-modal__signature');
+    const dateEl = document.querySelector('.letter-date-subtext');
+
+    // Lưu văn bản gốc từ DOM một lần duy nhất
+    const letterItems = [
+      { el: titleEl, text: titleEl ? titleEl.textContent.trim() : '' },
+      { el: p1, text: p1 ? p1.textContent.trim() : '' },
+      { el: p2, text: p2 ? p2.textContent.trim() : '' },
+      { el: p3, text: p3 ? p3.textContent.trim() : '' },
+      { el: p4, text: p4 ? p4.textContent.trim() : '' },
+      { el: p5, text: p5 ? p5.textContent.trim() : '' },
+      { el: sigEl, text: sigEl ? sigEl.textContent.trim() : '', parent: sigArea },
+      { el: dateEl, text: dateEl ? dateEl.textContent.trim() : '', parent: sigArea }
+    ].filter(item => item.el && item.text);
+
     let isTypingActive = false;
-    let typingTimeouts = [];
+    let typingTimer = null;
+    let cursorFadeTimer = null;
+    let cursorEl = null;
+
+    function getOrCreateCursor() {
+      if (!cursorEl) {
+        cursorEl = document.createElement('span');
+        cursorEl.className = 'letter-cursor';
+        cursorEl.setAttribute('aria-hidden', 'true');
+      }
+      cursorEl.style.opacity = '1';
+      cursorEl.style.transition = '';
+      return cursorEl;
+    }
+
+    function removeCursor() {
+      if (cursorFadeTimer) {
+        clearTimeout(cursorFadeTimer);
+        cursorFadeTimer = null;
+      }
+      if (cursorEl && cursorEl.parentNode) {
+        cursorEl.parentNode.removeChild(cursorEl);
+      }
+    }
 
     function clearTypingTimeouts() {
-      typingTimeouts.forEach(t => clearTimeout(t));
-      typingTimeouts = [];
+      if (typingTimer) {
+        clearTimeout(typingTimer);
+        typingTimer = null;
+      }
+      if (cursorFadeTimer) {
+        clearTimeout(cursorFadeTimer);
+        cursorFadeTimer = null;
+      }
       isTypingActive = false;
+    }
+
+    // Âm thanh gõ chữ nhẹ nhàng (Mechanical key / fountain pen tap ASMR)
+    function playTypewriterTap() {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      try {
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(460 + Math.random() * 140, t);
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.025);
+      } catch (err) {}
     }
 
     function revealAllParagraphsInstantly() {
       clearTypingTimeouts();
-      document.querySelectorAll('.letter-paragraph, .letter-modal__signature-area').forEach(el => {
+      removeCursor();
+
+      letterItems.forEach(item => {
+        if (item.el) {
+          item.el.textContent = item.text;
+          item.el.style.display = '';
+          item.el.classList.add('typed');
+        }
+      });
+
+      if (sigArea) {
+        sigArea.style.display = '';
+        sigArea.classList.add('typed');
+      }
+
+      document.querySelectorAll('.letter-paragraph').forEach(el => {
+        el.style.display = '';
         el.classList.add('typed');
       });
+
+      if (letterSkipHint) {
+        letterSkipHint.style.transition = 'opacity 0.4s ease';
+        letterSkipHint.style.opacity = '0';
+        letterSkipHint.style.pointerEvents = 'none';
+      }
     }
 
     function startLetterTypewriter() {
       clearTypingTimeouts();
+      removeCursor();
       isTypingActive = true;
 
-      document.querySelectorAll('.letter-paragraph, .letter-modal__signature-area').forEach(el => {
-        el.classList.remove('typed');
-      });
-
-      const paragraphs = [
-        document.getElementById('lp1'),
-        document.getElementById('lp2'),
-        document.getElementById('lp3'),
-        document.getElementById('lp4'),
-        document.getElementById('lp5'),
-        document.getElementById('lpSig')
-      ];
-
-      paragraphs.forEach((p, idx) => {
-        if (!p) return;
-        const delay = 350 + (idx * 550);
-        const t = setTimeout(() => {
-          p.classList.add('typed');
-          if (idx === paragraphs.length - 1) {
-            isTypingActive = false;
+      // Reset trạng thái: ẩn các đoạn và xóa văn bản cũ
+      letterItems.forEach(item => {
+        if (item.el) {
+          item.el.textContent = '';
+          item.el.classList.remove('typed');
+          if (item.el !== titleEl) {
+            item.el.style.display = 'none';
           }
-        }, delay);
-        typingTimeouts.push(t);
+        }
       });
+
+      if (sigArea) {
+        sigArea.style.display = 'none';
+        sigArea.classList.remove('typed');
+      }
+
+      if (letterSkipHint) {
+        letterSkipHint.style.opacity = '0.85';
+        letterSkipHint.style.pointerEvents = 'auto';
+      }
+
+      if (letterBox) {
+        letterBox.scrollTop = 0;
+      }
+
+      let currentItemIdx = 0;
+      let currentCharIdx = 0;
+      let textNode = null;
+      const cursor = getOrCreateCursor();
+
+      function prepareItem(item) {
+        if (item.parent) {
+          item.parent.style.display = '';
+          item.parent.classList.add('typed');
+        }
+        item.el.style.display = '';
+        item.el.classList.add('typed');
+        item.el.innerHTML = '';
+
+        textNode = document.createTextNode('');
+        item.el.appendChild(textNode);
+        item.el.appendChild(cursor);
+        currentCharIdx = 0;
+      }
+
+      function typeNextChar() {
+        if (!isTypingActive) return;
+
+        if (currentItemIdx >= letterItems.length) {
+          // Hoàn thành gõ toàn bộ bức thư
+          isTypingActive = false;
+          if (letterSkipHint) {
+            letterSkipHint.style.transition = 'opacity 0.6s ease';
+            letterSkipHint.style.opacity = '0';
+            letterSkipHint.style.pointerEvents = 'none';
+          }
+          // Con trỏ nhấp nháy 2.5s rồi mờ dần
+          cursorFadeTimer = setTimeout(() => {
+            if (cursor.parentNode) {
+              cursor.style.transition = 'opacity 0.8s ease';
+              cursor.style.opacity = '0';
+              setTimeout(removeCursor, 800);
+            }
+          }, 2500);
+          return;
+        }
+
+        const currentItem = letterItems[currentItemIdx];
+        const chars = Array.from(currentItem.text);
+
+        if (currentCharIdx === 0) {
+          prepareItem(currentItem);
+        }
+
+        if (currentCharIdx < chars.length) {
+          const char = chars[currentCharIdx];
+          textNode.nodeValue += char;
+          currentCharIdx++;
+
+          if (char.trim() !== '') {
+            playTypewriterTap();
+          }
+
+          // Tự động cuộn theo dòng đang gõ
+          if (letterBox) {
+            const isNearBottom = (letterBox.scrollHeight - letterBox.scrollTop - letterBox.clientHeight) < 140;
+            if (isNearBottom) {
+              letterBox.scrollTop = letterBox.scrollHeight;
+            }
+          }
+
+          // Tốc độ đánh chữ tự nhiên & ngắt nhịp dấu câu
+          let delay = 22 + Math.random() * 12; // 22-34ms
+          if (char === '.' || char === '!' || char === '?' || char === '–') {
+            delay += 140;
+          } else if (char === ',' || char === ':' || char === ';') {
+            delay += 80;
+          }
+
+          typingTimer = setTimeout(typeNextChar, delay);
+        } else {
+          // Chuyển sang phần tiếp theo
+          currentItemIdx++;
+          let pauseBetween = 240;
+          if (currentItem.el === titleEl) {
+            pauseBetween = 380;
+          } else if (currentItem.el === p5) {
+            pauseBetween = 320;
+          }
+          typingTimer = setTimeout(typeNextChar, pauseBetween);
+        }
+      }
+
+      typingTimer = setTimeout(typeNextChar, 100);
     }
 
     function openLetter(e) {
@@ -4222,12 +4432,13 @@
       setTimeout(() => {
         letterModal.classList.add('is-open');
         document.body.classList.add('letter-is-open');
-        startLetterTypewriter();
+        setTimeout(startLetterTypewriter, 260);
       }, 600);
     }
 
     function closeLetter() {
       clearTypingTimeouts();
+      removeCursor();
       letterModal.classList.remove('is-open');
       document.body.classList.remove('letter-is-open');
       setTimeout(() => {
@@ -4244,7 +4455,16 @@
 
     if (letterBoxWrap) {
       letterBoxWrap.addEventListener('click', (e) => {
-        if (e.target !== letterClose && isTypingActive) {
+        if ((!letterClose || !letterClose.contains(e.target)) && isTypingActive) {
+          revealAllParagraphsInstantly();
+        }
+      });
+    }
+
+    if (letterSkipHint) {
+      letterSkipHint.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isTypingActive) {
           revealAllParagraphsInstantly();
         }
       });
