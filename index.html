@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Dành Tặng Cậu · Ngày Phụ Nữ Việt Nam 20/10 🌷</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -622,20 +622,40 @@
     --letter-modal-btn-gradient: linear-gradient(135deg, #ca8a04 0%, #facc15 100%);
   }
 
-  body {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    height: var(--app-h);
-    min-height: var(--app-h);
-    width: 100vw;
-    max-width: 100vw;
-    background-color: var(--dark-color);
+  html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
     overflow: hidden;
-    perspective: 1000px;
+    background-color: #050814;
+  }
+
+  body {
+    position: relative;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: var(--app-h, 100vh);
+    min-height: var(--app-h, 100vh);
+    background-color: #050814;
+    overflow: hidden;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+  }
+
+  #contenido-principal {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    perspective: 1000px;
+    transition: opacity 1.35s ease;
   }
 
   /* ============================================================
@@ -1440,13 +1460,10 @@
   }
 
   .night {
-    position: fixed;
-    left: 50%;
-    top: 0;
-    transform: translateX(-50%);
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    filter: blur(0.1vmin);
     background: url('https://i.pinimg.com/736x/b6/1b/dd/b61bdd5dc4afcdefeb5b285d21ea5b3c.jpg') center center / cover no-repeat;
     z-index: 0;
   }
@@ -3287,7 +3304,192 @@
       }
     }
 
-  </style>
+  
+  /* ==========================================================================
+     📱 TỐI ƯU HÓA HOÀN HẢO CHO MÀN HÌNH ĐIỆN THOẠI DI ĐỘNG (MOBILE PORTRAIT)
+     ========================================================================== */
+  html, body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    background-color: #050814 !important;
+    -webkit-text-size-adjust: 100% !important;
+  }
+
+  body {
+    position: relative !important;
+    width: 100vw !important;
+    height: var(--app-h, 100vh) !important;
+  }
+
+  #contenido-principal {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+  }
+
+  .night {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: url('https://i.pinimg.com/736x/b6/1b/dd/b61bdd5dc4afcdefeb5b285d21ea5b3c.jpg') center center / cover no-repeat !important;
+    z-index: 0 !important;
+  }
+
+  .intro-curtain-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+
+  
+  /* Ẩn phong bì thư nhỏ khi thư lớn đang mở */
+  body.letter-is-open .letter,
+  body:has(.letter-modal.is-open) .letter,
+  .letter.is-opening,
+  .letter-modal.is-open ~ #sceneContainer .letter {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.3s ease !important;
+  }
+
+
+  @media (max-width: 600px) {
+    /* Đảm bảo nền đêm và rèm che bao phủ trọn vẹn màn hình điện thoại */
+    .intro-curtain-overlay {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 55px) !important;
+    }
+    .fingerprint-bottom-bar {
+      width: 100% !important;
+      max-width: 100vw !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 0 auto !important;
+    }
+
+    /* Giấy gói hoa trên điện thoại: to, rõ nét, nâng cao lên giữa màn hình */
+    .ramo {
+      width: 85vw !important;
+      max-width: 360px !important;
+      bottom: calc(8vmin + env(safe-area-inset-bottom, 0px)) !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+    }
+    .ramo img {
+      width: 100% !important;
+      height: auto !important;
+    }
+
+    /* 11 bông hoa tulip trên điện thoại: to rực rỡ, vươn cao, không bị chìm xuống */
+    .flowers {
+      transform: scale(0.88) translateY(-12vmin) !important;
+      bottom: calc(8vmin + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Nơ buộc bó hoa */
+    .flower-bow {
+      width: 85vw !important;
+      max-width: 360px !important;
+      bottom: calc(8vmin + env(safe-area-inset-bottom, 0px)) !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+    }
+    .flower-bow img {
+      width: 100% !important;
+      height: auto !important;
+    }
+
+    /* Phong bì thư nhỏ gắn trên nơ hoa */
+    .letter {
+      width: clamp(130px, 34vw, 160px) !important;
+      bottom: calc(18vmin + env(safe-area-inset-bottom, 0px)) !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+    }
+
+    /* Thỏ trắng hai bên ôm sát sườn màn hình */
+    .rabbit {
+      width: 65px !important;
+    }
+    .rabbit--left {
+      left: 8px !important;
+      bottom: 12px !important;
+    }
+    .rabbit--right {
+      right: 8px !important;
+      bottom: 12px !important;
+    }
+
+    /* Modal lá thư bưu thiếp mở ra trên điện thoại */
+    .letter-modal {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      padding: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-sizing: border-box !important;
+    }
+    .letter-modal__box-wrap {
+      width: calc(100vw - 32px) !important;
+      max-width: 380px !important;
+      max-height: 80vh !important;
+      padding: 24px 18px 20px !important;
+      margin: auto !important;
+      box-sizing: border-box !important;
+    }
+    .letter-modal__close {
+      position: absolute !important;
+      top: -10px !important;
+      right: -8px !important;
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 19px !important;
+      z-index: 30 !important;
+    }
+    .letter-modal__box {
+      max-height: 64vh !important;
+    }
+    .letter-modal__title {
+      font-size: 25px !important;
+      margin-bottom: 10px !important;
+    }
+    .letter-modal__content {
+      font-size: 17.5px !important;
+      line-height: 1.65 !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+    }
+    .letter-modal__signature {
+      font-size: 24px !important;
+    }
+    .letter-date-subtext {
+      font-size: 14px !important;
+    }
+  }
+</style>
 </head>
 <body class="not-loaded">
 
@@ -4019,6 +4221,7 @@
 
       setTimeout(() => {
         letterModal.classList.add('is-open');
+        document.body.classList.add('letter-is-open');
         startLetterTypewriter();
       }, 600);
     }
@@ -4026,6 +4229,7 @@
     function closeLetter() {
       clearTypingTimeouts();
       letterModal.classList.remove('is-open');
+      document.body.classList.remove('letter-is-open');
       setTimeout(() => {
         if (letterEl) letterEl.classList.remove('is-opening');
       }, 400);
